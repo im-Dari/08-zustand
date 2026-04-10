@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import type { NoteTag } from '../../types/note';
 import { useNoteStore } from '../../lib/store/noteStore';
 import { createNote } from '../../lib/api';
@@ -9,9 +11,10 @@ import css from './NoteForm.module.css';
 
 export default function NoteForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const { draft, setDraft, clearDraft } = useNoteStore();
   const [formData, setFormData] = useState(draft);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setFormData(draft);
@@ -23,22 +26,30 @@ export default function NoteForm() {
     setDraft(newData);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await createNote({
-        title: formData.title,
-        content: formData.content,
-        tag: formData.tag,
-      });
+  const mutation = useMutation({
+    mutationFn: createNote,
+
+    onSuccess: async () => {
+      // 🔥 ключова частина — оновлення списку нотаток
+      await queryClient.invalidateQueries({ queryKey: ['notes'] });
+
       clearDraft();
       router.back();
-    } catch (error) {
+    },
+
+    onError: (error) => {
       console.error('Failed to create note:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    mutation.mutate({
+      title: formData.title,
+      content: formData.content,
+      tag: formData.tag,
+    });
   };
 
   const handleCancel = () => {
@@ -96,11 +107,20 @@ export default function NoteForm() {
       </div>
 
       <div className={css.actions}>
-        <button type="button" className={css.cancelButton} onClick={handleCancel}>
+        <button
+          type="button"
+          className={css.cancelButton}
+          onClick={handleCancel}
+        >
           Cancel
         </button>
-        <button type="submit" className={css.submitButton} disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create'}
+
+        <button
+          type="submit"
+          className={css.submitButton}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? 'Creating...' : 'Create'}
         </button>
       </div>
     </form>
