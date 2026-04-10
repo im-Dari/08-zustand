@@ -1,7 +1,13 @@
-.main{
-  flex: 1;
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
 }
 
+.main {
+  flex: 1;
+  display: flex;
+}
 
 .container {
   display: flex;
@@ -18,10 +24,8 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid #ddd;
-min-height: 100%;
 }
 
 .notesWrapper {
-  width: 100%;
-  height: 100%;
+ flex: 1;
 }

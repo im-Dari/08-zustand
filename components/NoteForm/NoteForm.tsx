@@ -36,7 +36,6 @@ export default function NoteForm() {
       router.back();
     } catch (error) {
       console.error('Failed to create note:', error);
-      // Handle error, maybe show toast
     } finally {
       setIsSubmitting(false);
     }
